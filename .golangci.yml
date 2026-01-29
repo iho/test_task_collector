@@ -1,0 +1,30 @@
+version: 2
+run:
+  concurrency: 4
+  timeout: 5m
+  tests: true
+
+linters:
+  disable-all: true
+  enable:
+    - revive
+    - misspell
+    - unconvert
+    - whitespace
+    - wastedassign
+    - gocyclo
+
+linters-settings:
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+  misspell:
+    locale: US
+  gocyclo:
+    min-complexity: 15
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
