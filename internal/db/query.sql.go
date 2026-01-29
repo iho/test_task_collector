@@ -27,10 +27,18 @@ pivoted AS (
     SELECT
         room,
         bucket,
-        MAX(CASE WHEN type = 'V' THEN avg_val END)::DOUBLE PRECISION AS v_val,
-        MAX(CASE WHEN type = 'R' THEN avg_val END)::DOUBLE PRECISION AS r_val
+        MAX(CASE WHEN type = 'V' THEN avg_val END)::DOUBLE PRECISION AS v_raw,
+        MAX(CASE WHEN type = 'R' THEN avg_val END)::DOUBLE PRECISION AS r_raw
     FROM bucketed_measurements
     GROUP BY 1, 2
+),
+filled AS (
+    SELECT
+        room,
+        bucket,
+        COALESCE(v_raw, MAX(v_raw) OVER (PARTITION BY room ORDER BY bucket ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)) AS v_val,
+        COALESCE(r_raw, MAX(r_raw) OVER (PARTITION BY room ORDER BY bucket ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)) AS r_val
+    FROM pivoted
 )
 SELECT
     room,
@@ -39,19 +47,19 @@ SELECT
         WHEN r_val = 0 THEN 0 
         WHEN v_val IS NULL OR r_val IS NULL THEN 0
         ELSE v_val / r_val 
-    END)::DOUBLE PRECISION AS i_val,
-    v_val,
-    r_val
-FROM pivoted
+    END)::nullable_float8 AS i_val,
+    CASE WHEN true THEN v_val ELSE NULL END::nullable_float8 AS v_val,
+    CASE WHEN true THEN r_val ELSE NULL END::nullable_float8 AS r_val
+FROM filled
 ORDER BY room, bucket
 `
 
 type GetAnalysisRow struct {
 	Room      string
 	Timestamp pgtype.Timestamp
-	IVal      float64
-	VVal      float64
-	RVal      float64
+	IVal      pgtype.Float8
+	VVal      pgtype.Float8
+	RVal      pgtype.Float8
 }
 
 func (q *Queries) GetAnalysis(ctx context.Context) ([]GetAnalysisRow, error) {

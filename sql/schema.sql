@@ -1,7 +1,9 @@
 CREATE TABLE rooms (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE
 );
+
+CREATE DOMAIN nullable_float8 AS double precision;
 
 CREATE TYPE sensor_type AS ENUM ('V', 'R');
 
