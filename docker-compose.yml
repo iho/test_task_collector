@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  sink:
+    build: .
+    command: ./sink --bind :50051 --log /app/logs/telemetry.log --rate-limit 1048576
+    ports:
+      - "50051:50051"
+    volumes:
+      - ./logs:/app/logs
+      - ./certs:/app/certs
+    networks:
+      - telemetry-net
+
+  sensor-1:
+    build: .
+    command: ./sensor --sink sink:50051 --rate 2 --name sensor-docker-1
+    depends_on:
+      - sink
+    networks:
+      - telemetry-net
+
+  sensor-2:
+    build: .
+    command: ./sensor --sink sink:50051 --rate 5 --name sensor-docker-2
+    depends_on:
+      - sink
+    networks:
+      - telemetry-net
+
+  stress-test:
+    image: grafana/k6:latest
+    command: run /scripts/stress.js
+    environment:
+      - SINK_ADDR=sink:50051
+    volumes:
+      - ./k6:/scripts
+      - ./proto:/proto
+    networks:
+      - telemetry-net
+    depends_on:
+      - sink
+
+  sink-mtls:
+    build: .
+    command: ./sink --bind :50051 --log /app/logs/telemetry.log --cert /app/certs/server.crt --key /app/certs/server.key --ca /app/certs/ca.crt
+    volumes:
+      - ./logs:/app/logs
+      - ./certs:/app/certs
+    networks:
+      - telemetry-net
+
+  stress-test-mtls:
+    image: grafana/k6:latest
+    command: run /scripts/stress_mtls.js
+    environment:
+      - SINK_ADDR=sink-mtls:50051
+    volumes:
+      - ./k6:/scripts
+      - ./proto:/proto
+      - ./certs:/certs
+    networks:
+      - telemetry-net
+    depends_on:
+      - sink-mtls
+
+  tests:
+    build:
+      context: .
+      target: tester
+    volumes:
+      - .:/app
+    networks:
+      - telemetry-net
+
+networks:
+  telemetry-net:
+    driver: bridge

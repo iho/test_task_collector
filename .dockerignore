@@ -1,0 +1,35 @@
+# Version Control
+.git
+.gitignore
+
+# Init
+go.mod
+go.sum
+
+# Build Artifacts
+bin/
+*.log
+
+# Secrets
+certs/
+*.key
+*.crt
+*.csr
+*.cnf
+
+# IDEs
+.idea/
+.vscode/
+
+# Documentation & Meta
+README.md
+Makefile
+plan.md
+task.md
+*.md
+
+# Tests & Scripts
+k6/
+scripts/
+tests/
+*.log
