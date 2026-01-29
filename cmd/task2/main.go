@@ -88,17 +88,19 @@ func applySchema(ctx context.Context, pool *pgxpool.Pool) error {
 }
 
 func seedData(ctx context.Context, queries *db.Queries) error {
-	// Helper for insertions
-	insertM := func(sensorID int32, val float64, t time.Time) error {
-		_, err := queries.InsertMeasurement(ctx, db.InsertMeasurementParams{
-			SensorID:  sensorID,
-			Value:     val,
-			Timestamp: pgtype.Timestamp{Time: t, Valid: true},
-		})
-		return err
+	if err := seedRoomA(ctx, queries); err != nil {
+		return fmt.Errorf("seed room A: %w", err)
 	}
+	if err := seedRoomB(ctx, queries); err != nil {
+		return fmt.Errorf("seed room B: %w", err)
+	}
+	if err := seedRoomC(ctx, queries); err != nil {
+		return fmt.Errorf("seed room C: %w", err)
+	}
+	return nil
+}
 
-	// --- Room A ---
+func seedRoomA(ctx context.Context, queries *db.Queries) error {
 	roomA, err := queries.InsertRoom(ctx, "room_A")
 	if err != nil {
 		return err
@@ -117,7 +119,48 @@ func seedData(ctx context.Context, queries *db.Queries) error {
 		return err
 	}
 
-	// --- Room B ---
+	baseTime := time.Date(2026, 1, 30, 10, 0, 0, 0, time.UTC)
+	ts3 := baseTime.Add(2 * time.Second)
+	ts4 := baseTime.Add(3 * time.Second)
+
+	// Helper for insertions (duplicated here for simplicity or could be passed/method)
+	insertM := func(sensorID int32, val float64, t time.Time) error {
+		_, err := queries.InsertMeasurement(ctx, db.InsertMeasurementParams{
+			SensorID:  sensorID,
+			Value:     val,
+			Timestamp: pgtype.Timestamp{Time: t, Valid: true},
+		})
+		return err
+	}
+
+	// Case 1: Room A, T+0
+	if err := insertM(sAV1.ID, 220, baseTime); err != nil {
+		return err
+	}
+	if err := insertM(sAR1.ID, 10, baseTime); err != nil {
+		return err
+	}
+	if err := insertM(sAR2.ID, 12, baseTime); err != nil {
+		return err
+	}
+
+	// Case 3: Room A, T+2
+	if err := insertM(sAV1.ID, 230, ts3); err != nil {
+		return err
+	}
+	if err := insertM(sAR1.ID, 11.5, ts3); err != nil {
+		return err
+	}
+
+	// Case 4: Gap Filling (Room A, T+3)
+	if err := insertM(sAV1.ID, 240, ts4); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func seedRoomB(ctx context.Context, queries *db.Queries) error {
 	roomB, err := queries.InsertRoom(ctx, "room_B")
 	if err != nil {
 		return err
@@ -144,31 +187,19 @@ func seedData(ctx context.Context, queries *db.Queries) error {
 		return err
 	}
 
-	// --- Room C ---
-	roomC, err := queries.InsertRoom(ctx, "room_C")
-	if err != nil {
-		return err
-	}
-	sCV1, err := queries.InsertSensor(ctx, db.InsertSensorParams{RoomID: roomC.ID, Name: "sC_V1", Type: db.SensorTypeV})
-	if err != nil {
-		return err
-	}
-
 	baseTime := time.Date(2026, 1, 30, 10, 0, 0, 0, time.UTC)
+	ts2 := baseTime.Add(1 * time.Second)
 
-	// Case 1: Room A, T+0
-	if err := insertM(sAV1.ID, 220, baseTime); err != nil {
-		return err
-	}
-	if err := insertM(sAR1.ID, 10, baseTime); err != nil {
-		return err
-	}
-	if err := insertM(sAR2.ID, 12, baseTime); err != nil {
+	insertM := func(sensorID int32, val float64, t time.Time) error {
+		_, err := queries.InsertMeasurement(ctx, db.InsertMeasurementParams{
+			SensorID:  sensorID,
+			Value:     val,
+			Timestamp: pgtype.Timestamp{Time: t, Valid: true},
+		})
 		return err
 	}
 
 	// Case 2: Room B, T+1
-	ts2 := baseTime.Add(1 * time.Second)
 	if err := insertM(sBV1.ID, 220, ts2); err != nil {
 		return err
 	}
@@ -185,18 +216,27 @@ func seedData(ctx context.Context, queries *db.Queries) error {
 		return err
 	}
 
-	// Case 3: Room A, T+2
-	ts3 := baseTime.Add(2 * time.Second)
-	if err := insertM(sAV1.ID, 230, ts3); err != nil {
+	return nil
+}
+
+func seedRoomC(ctx context.Context, queries *db.Queries) error {
+	roomC, err := queries.InsertRoom(ctx, "room_C")
+	if err != nil {
 		return err
 	}
-	if err := insertM(sAR1.ID, 11.5, ts3); err != nil {
+	sCV1, err := queries.InsertSensor(ctx, db.InsertSensorParams{RoomID: roomC.ID, Name: "sC_V1", Type: db.SensorTypeV})
+	if err != nil {
 		return err
 	}
 
-	// Case 4: Gap Filling (Room A, T+3)
-	ts4 := baseTime.Add(3 * time.Second)
-	if err := insertM(sAV1.ID, 240, ts4); err != nil {
+	baseTime := time.Date(2026, 1, 30, 10, 0, 0, 0, time.UTC)
+
+	insertM := func(sensorID int32, val float64, t time.Time) error {
+		_, err := queries.InsertMeasurement(ctx, db.InsertMeasurementParams{
+			SensorID:  sensorID,
+			Value:     val,
+			Timestamp: pgtype.Timestamp{Time: t, Valid: true},
+		})
 		return err
 	}
 

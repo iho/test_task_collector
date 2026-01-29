@@ -72,9 +72,9 @@ test:
 lint:
 	@if ! command -v golangci-lint >/dev/null 2>&1; then \
 		echo "golangci-lint not found, installing..."; \
-		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+		go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.5.0; \
 	fi
-	golangci-lint run
+	GOFLAGS="-buildvcs=false" $(shell go env GOPATH)/bin/golangci-lint run
 
 stress-test:
 	@echo "Running k6 stress test..."
