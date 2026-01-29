@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -12,20 +13,27 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
 	cfg := sensor.LoadConfig()
 
 	agent, err := sensor.NewAgent(cfg)
 	if err != nil {
-		log.Fatalf("Failed to create agent: %v", err)
+		return fmt.Errorf("create agent: %w", err)
 	}
 	defer agent.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
 	go func() {
-		sigCh := make(chan os.Signal, 1)
-		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 		<-sigCh
 		log.Println("Shutting down sensor...")
 		cancel()
@@ -39,4 +47,5 @@ func main() {
 	)
 
 	agent.Start(ctx)
+	return nil
 }

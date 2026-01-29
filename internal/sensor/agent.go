@@ -4,13 +4,12 @@ package sensor
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"log"
 	"math/rand"
-	"os"
 	"time"
 
+	"github.com/iho/test_task_collector/internal/pkg/tlsutil"
 	pb "github.com/iho/test_task_collector/proto/telemetry"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -30,7 +29,11 @@ func NewAgent(cfg *Config) (*Agent, error) {
 	opts := []grpc.DialOption{}
 
 	if cfg.CertFile != "" && cfg.KeyFile != "" {
-		tlsConfig, err := loadTLSConfig(cfg)
+		tlsConfig, err := tlsutil.LoadTLSConfig(tlsutil.Config{
+			CertFile: cfg.CertFile,
+			KeyFile:  cfg.KeyFile,
+			CAFile:   cfg.CAFile,
+		}, tls.NoClientCert)
 		if err != nil {
 			return nil, err
 		}
@@ -91,29 +94,4 @@ func (a *Agent) Close() {
 	if err := a.conn.Close(); err != nil {
 		log.Printf("Failed to close connection: %v", err)
 	}
-}
-
-func loadTLSConfig(cfg *Config) (*tls.Config, error) {
-	certificate, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load key pair: %w", err)
-	}
-
-	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{certificate},
-	}
-
-	if cfg.CAFile != "" {
-		caCert, err := os.ReadFile(cfg.CAFile)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read CA file: %w", err)
-		}
-		caCertPool := x509.NewCertPool()
-		if !caCertPool.AppendCertsFromPEM(caCert) {
-			return nil, fmt.Errorf("failed to append CA cert")
-		}
-		tlsConfig.RootCAs = caCertPool
-	}
-
-	return tlsConfig, nil
 }
