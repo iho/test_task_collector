@@ -44,19 +44,24 @@ make stress-test-mtls
 (Requires [k6](https://k6.io/) installed)
 
 ## Docker Compose
-Run the entire system (Sink + 2 Sensors) with Docker:
+Run the entire system (Sink + 2 Sensors + Postgres) with Docker:
 ```bash
 docker-compose up --build
 ```
+*Note: This runs the core services. Stress tests are excluded by default using Docker profiles.*
 
 Run Stress Test in Docker:
 ```bash
-docker-compose run stress-test
+make docker-stress-test
+# OR
+docker-compose run --rm stress-test
 ```
 
 Run Stress Test with mTLS in Docker:
 ```bash
-docker-compose run stress-test-mtls
+make docker-stress-test-mtls
+# OR
+docker-compose run --rm stress-test-mtls
 ```
 
 ## Testing (gotestsum)
@@ -139,4 +144,32 @@ Sink:
 Sensor:
 ```bash
 ./bin/sensor --cert client.crt --key client.key --ca ca.crt
+```
+
+## Task 2: Database & SQL Analysis
+
+This project includes a secondary task to demonstrate SQL skills (PostgreSQL).
+
+### Components
+- **Schema**: `sql/schema.sql` (Rooms, Sensors, Measurements).
+- **Queries**: `sql/query.sql` (Aggregation and Ohm's Law calculation).
+- **Tooling**: `sqlc` used for Go code generation.
+
+### Running Verification
+To verify Task 2 (apply schema, seed data, run analysis):
+
+1. Ensure Docker is running.
+2. Run the verification tool:
+```bash
+# Starts Postgres and runs the Go verification tool
+docker-compose up -d postgres
+go run ./cmd/task2/main.go
+```
+
+Expected output will show aggregated sensor data and calculated current (I).
+
+### Development
+To generate Go code from SQL (requires `sqlc`):
+```bash
+sqlc generate
 ```

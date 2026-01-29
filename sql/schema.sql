@@ -1,0 +1,20 @@
+CREATE TABLE rooms (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TYPE sensor_type AS ENUM ('V', 'R');
+
+CREATE TABLE sensors (
+    id SERIAL PRIMARY KEY,
+    room_id INTEGER NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    type sensor_type NOT NULL
+);
+
+CREATE TABLE measurements (
+    id SERIAL PRIMARY KEY,
+    sensor_id INTEGER NOT NULL REFERENCES sensors(id) ON DELETE CASCADE,
+    value DOUBLE PRECISION NOT NULL,
+    timestamp TIMESTAMP NOT NULL
+);

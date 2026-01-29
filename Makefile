@@ -84,6 +84,14 @@ stress-test-mtls:
 	@echo "Running k6 stress test with mTLS..."
 	k6 run k6/stress_mtls.js
 
+docker-stress-test:
+	@echo "Running k6 stress test in Docker..."
+	docker-compose run --rm stress-test
+
+docker-stress-test-mtls:
+	@echo "Running k6 stress test with mTLS in Docker..."
+	docker-compose run --rm stress-test-mtls
+
 clean:
 	rm -rf $(BIN_DIR) $(CERTS_DIR) *.log
 	@echo "Cleaned up."

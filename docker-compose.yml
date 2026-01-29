@@ -30,6 +30,7 @@ services:
 
   stress-test:
     image: grafana/k6:latest
+    profiles: ["test"]
     command: run /scripts/stress.js
     environment:
       - SINK_ADDR=sink:50051
@@ -52,6 +53,7 @@ services:
 
   stress-test-mtls:
     image: grafana/k6:latest
+    profiles: ["test"]
     command: run /scripts/stress_mtls.js
     environment:
       - SINK_ADDR=sink-mtls:50051
@@ -68,8 +70,20 @@ services:
     build:
       context: .
       target: tester
+    profiles: ["test"]
     volumes:
       - .:/app
+    networks:
+      - telemetry-net
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=telemetry
+    ports:
+      - "5432:5432"
     networks:
       - telemetry-net
 

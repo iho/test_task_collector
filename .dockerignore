@@ -2,10 +2,6 @@
 .git
 .gitignore
 
-# Init
-go.mod
-go.sum
-
 # Build Artifacts
 bin/
 *.log
