@@ -8,8 +8,8 @@ SENSOR_BINARY := $(BIN_DIR)/sensor
 
 build:
 	@mkdir -p $(BIN_DIR)
-	go build -buildvcs=false -o $(SINK_BINARY) ./cmd/sink
-	go build -buildvcs=false -o $(SENSOR_BINARY) ./cmd/sensor
+	go build -o $(SINK_BINARY) ./cmd/sink
+	go build -o $(SENSOR_BINARY) ./cmd/sensor
 	@echo "Build complete."
 
 proto:
